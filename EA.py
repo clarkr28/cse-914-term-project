@@ -10,6 +10,7 @@ from ea_individual import Individual
 from ea_individual_binary import IndividualBinary
 from datetime import datetime
 import os
+import copy
 
 # parameters about the EA
 POP_SIZE = 25
@@ -76,12 +77,16 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob, keep_
         evaluate individuals
         """
         # get subset of data to test with (all the test data would be too slow)
-        test_inds = []
-        while len(test_inds) < test_size:
-            ind = random.randint(0, len(can_data) - 1)
-            if ind not in test_inds:
-                test_inds.append(ind)
-        test_data_subset = [can_data[i] for i in test_inds]
+        test_data_subset = []
+        if test_size < 0:  # use all test data if test data size is negative
+            test_data_subset = can_data
+        else:
+            test_inds = []
+            while len(test_inds) < test_size:
+                ind = random.randint(0, len(can_data) - 1)
+                if ind not in test_inds:
+                    test_inds.append(ind)
+            test_data_subset = [can_data[i] for i in test_inds]
 
         # run fitness test on all individuals because the data is random every round
         fitnesses = []
@@ -97,7 +102,7 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob, keep_
         n_best = pop[0:keep_num]
         n_best.sort(key=lambda x: x.get_fitness(), reverse=True)
         # filter through the rest and swap up
-        for i, p in enumerate(pop[keep_num:]):
+        for p in pop[keep_num:]:
             if p.get_fitness() > n_best[-1].get_fitness():
                 n_best[-1] = p
                 index = len(n_best) - 2
@@ -116,7 +121,7 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob, keep_
                    pop, avg_fitness, max_fitness, min(fitnesses), i)
 
         # select individuals for next generation
-        next_gen = n_best
+        next_gen = copy.deepcopy(n_best)
         for p in pop:
             if random.random() < p.get_fitness() / max_fitness:
                 next_gen.append(p)
@@ -127,12 +132,12 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob, keep_
                 next_gen[j].cross(next_gen[j+1])
 
         # mutate offspring
-        for p in next_gen:
-            p.mutate(mut_prob)
+        for j in range(keep_num, len(next_gen)):
+            next_gen[j].mutate(mut_prob)
 
         # create new individuals
         while len(next_gen) < pop_size:
-            next_gen.append(Individual())
+            next_gen.append(IndividualBinary())
 
         pop = next_gen
 
