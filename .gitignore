@@ -1,4 +1,5 @@
 .idea/
 env/
 __pycache__/
-log_gen_*.pkl
+logs/log_gen_*.pkl
+logs/run_params.pkl
