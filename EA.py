@@ -37,6 +37,18 @@ def full_logger(fname, pop, avg_fitness, max_fitness, min_fitness, generation):
     f.close()
 
 
+def light_logger(fname, fitnesses, avg_fitness, max_fitness, min_fitness, generation):
+    log_data = {}
+    log_data['avg_fitness'] = avg_fitness
+    log_data['max_fitness'] = max_fitness
+    log_data['min_fitness'] = min_fitness
+    log_data['fitnesses'] = fitnesses
+    log_data['generation'] = generation
+    f = open(fname, 'wb')
+    pickle.dump(log_data, f)
+    f.close()
+
+
 def log_compressor(run_dir):
     fnames = os.listdir(run_dir)
     if len(fnames) == 0:
@@ -149,9 +161,12 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob, keep_
         """
         log data
         """
+        log_fname = run_dir + LOG_FNAME + str(i) + '.pkl'
         if i % log_freq == 0 or i == num_gens - 1:
-            full_logger(run_dir + LOG_FNAME + str(i) + '.pkl',
-                        pop, avg_fitness, max_fitness, min(fitnesses), i)
+            full_logger(log_fname, pop, avg_fitness, max_fitness, min(fitnesses), i)
+        else:
+            light_logger(log_fname, [p.get_fitness() for p in pop],
+                         avg_fitness, max_fitness, min(fitnesses), i)
 
         # select individuals for next generation
         next_gen = copy.deepcopy(n_best)
