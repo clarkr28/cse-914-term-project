@@ -10,7 +10,8 @@ from ea_individual import Individual
 from ea_individual_binary import IndividualBinary
 from datetime import datetime
 import os
-import copy
+import copy  # deepcopy used
+import gzip
 
 # parameters about the EA
 POP_SIZE = 25
@@ -20,9 +21,11 @@ LOG_DIR = './logs/'
 CAN_DATA_DIR = './data/'
 RUN_PARAMS_FNAME = 'run_params.pkl'
 LOG_FNAME = 'log_gen_'
+COMPRESSED_LOG_FNAME = 'compressed_log_data.pkl'
+LOG_COMPRESSOR_ERROR = 'Logfile name and generation data do not agree! \nfname: {}, data_generation {}'
 
 
-def logger(fname, pop, avg_fitness, max_fitness, min_fitness, generation):
+def full_logger(fname, pop, avg_fitness, max_fitness, min_fitness, generation):
     log_data = {}
     log_data['avg_fitness'] = avg_fitness
     log_data['max_fitness'] = max_fitness
@@ -31,6 +34,37 @@ def logger(fname, pop, avg_fitness, max_fitness, min_fitness, generation):
     log_data['generation'] = generation
     f = open(fname, 'wb')
     pickle.dump(log_data, f)
+    f.close()
+
+
+def log_compressor(run_dir):
+    fnames = os.listdir(run_dir)
+    if len(fnames) == 0:
+        return None
+
+    big_log = {}
+    if RUN_PARAMS_FNAME in fnames:
+        # load the run parameters and add the to the big dictionary
+        fnames.remove(RUN_PARAMS_FNAME)
+        f = open(run_dir + RUN_PARAMS_FNAME, 'rb')
+        big_log = pickle.load(f)
+        f.close()
+
+    big_log['logs'] = {}  # sub-dictionary to hold all the individual logs
+    for fname in fnames:
+        if LOG_FNAME in fname:
+            log_num = fname.split('.')[0].split('_')[-1]  # get the number from the filename
+            log_num = int(log_num)
+            log_file_handle = open(run_dir + fname, 'rb')
+            log_data = pickle.load(log_file_handle)
+            log_file_handle.close()
+            if log_num != log_data['generation']:
+                raise Exception(LOG_COMPRESSOR_ERROR.format(fname, log_data['generation']))
+            big_log['logs'][log_num] = log_data
+
+    # save all logged data in a compressed file
+    f = gzip.open(run_dir + COMPRESSED_LOG_FNAME, 'wb')
+    pickle.dump(big_log, f)
     f.close()
 
 
@@ -45,7 +79,7 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob, keep_
     :return:
     """
 
-    run_name = str(datetime.now()).split('.')[0]
+    run_name = str(datetime.now()).split('.')[0].replace(' ', '-').replace(':', '-')
     run_dir = LOG_DIR + run_name + '/'
     os.mkdir(run_dir)
 
@@ -112,13 +146,12 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob, keep_
                     n_best[index+1] = temp
                     index -= 1
 
-
         """
         log data
         """
         if i % log_freq == 0 or i == num_gens - 1:
-            logger(run_dir + LOG_FNAME + str(i) + '.pkl',
-                   pop, avg_fitness, max_fitness, min(fitnesses), i)
+            full_logger(run_dir + LOG_FNAME + str(i) + '.pkl',
+                        pop, avg_fitness, max_fitness, min(fitnesses), i)
 
         # select individuals for next generation
         next_gen = copy.deepcopy(n_best)
@@ -140,4 +173,7 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob, keep_
             next_gen.append(IndividualBinary())
 
         pop = next_gen
+
+    # compress the logs
+    log_compressor(run_dir)
 
