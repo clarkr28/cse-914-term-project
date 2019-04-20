@@ -34,7 +34,7 @@ class IndividualBinary:
             if sample[-1] == 'T':
                 total_score += prediction
             else:
-                total_score -= prediction
+                total_score -= prediction / 4
 
         self.tested = True
         if total_score > 0:
