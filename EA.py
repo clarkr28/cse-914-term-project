@@ -14,9 +14,6 @@ import copy  # deepcopy used
 import gzip
 
 # parameters about the EA
-POP_SIZE = 25
-TESTS_PER_GENOME = 10
-KEEP_BEST = 3
 LOG_DIR = './logs/'
 CAN_DATA_DIR = './data/'
 RUN_PARAMS_FNAME = 'run_params.pkl'
