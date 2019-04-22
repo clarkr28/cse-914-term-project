@@ -77,7 +77,8 @@ def log_compressor(run_dir):
     f.close()
 
 
-def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob, keep_num):
+def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob,
+    keep_num, run_title):
     """
     run the EA with the specified parameters
     :param pop_size: population size to use
@@ -89,6 +90,7 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob, keep_
     """
 
     run_name = str(datetime.now()).split('.')[0].replace(' ', '-').replace(':', '-')
+    run_name += '-' + run_title
     run_dir = LOG_DIR + run_name + '/'
     os.mkdir(run_dir)
 
