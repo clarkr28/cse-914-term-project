@@ -9,21 +9,21 @@ from EA import run
 run_title = 'DoS-3k-keep5'
 
 try:
-    run(200, -1, 400, 20, 'DoS_synthetic_3000.pkl', 0.0125, 5, run_title)
+    run(200, -1, 400, 20, 'DoS_synthetic_3000.pkl', 0.0625, 5, run_title)
 except Exception as e:
     print(e)
 
 try:
-    run(200, -1, 400, 20, 'DoS_synthetic_3000.pkl', 0.0250, 5, run_title)
+    run(200, -1, 400, 20, 'DoS_synthetic_3000.pkl', 0.0750, 5, run_title)
 except Exception as e:
     print(e)
 
 try:
-    run(200, -1, 400, 20, 'DoS_synthetic_3000.pkl', 0.0375, 5, run_title)
+    run(200, -1, 400, 20, 'DoS_synthetic_3000.pkl', 0.0875, 5, run_title)
 except Exception as e:
     print(e)
 
 try:
-    run(200, -1, 400, 20, 'DoS_synthetic_3000.pkl', 0.0500, 5, run_title)
+    run(200, -1, 400, 20, 'DoS_synthetic_3000.pkl', 0.0100, 5, run_title)
 except Exception as e:
     print(e)
