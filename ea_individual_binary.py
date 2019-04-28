@@ -14,6 +14,7 @@ class IndividualBinary:
     def __init__(self):
         self.tested = False  # signify that the individual has not been tested yet
         self.fitness = 0
+        self.fitness_data = []
         self.genome = []
         for i in range(8 * 10):  # 8 bits per byte * 10 bytes in a CAN message (ID + DATA field)
             # first binary value indicates if the bit is used
@@ -132,3 +133,10 @@ class IndividualBinary:
                 correct += 1
 
         return correct / len(predictions)
+
+    def set_fitness_data(self, data):
+        self.fitness_data = data
+        return None
+
+    def parallel_test(self):
+        return self.test(self.fitness_data)

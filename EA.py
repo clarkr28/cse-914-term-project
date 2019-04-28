@@ -6,12 +6,12 @@
 
 import random
 import pickle # CAN data was saved in pkl format
-from ea_individual import Individual
 from ea_individual_binary import IndividualBinary
 from datetime import datetime
 import os
 import copy  # deepcopy used
 import gzip
+from multiprocessing import Pool
 
 # parameters about the EA
 LOG_DIR = './logs/'
@@ -20,6 +20,7 @@ RUN_PARAMS_FNAME = 'run_params.pkl'
 LOG_FNAME = 'log_gen_'
 COMPRESSED_LOG_FNAME = 'compressed_log_data.pkl'
 LOG_COMPRESSOR_ERROR = 'Logfile name and generation data do not agree! \nfname: {}, data_generation {}'
+CPUS = 7
 
 
 def full_logger(fname, pop, avg_fitness, max_fitness, min_fitness, generation):
@@ -77,6 +78,33 @@ def log_compressor(run_dir):
     f.close()
 
 
+def parallel_fitness(individual):
+    individual.parallel_test()
+    return individual
+
+
+def inds_generator(max_val, length):
+    s = set()
+    while len(s) < length:
+        s.add(random.randint(0,max_val))
+    return list(s)
+
+
+def make_balanced_subset(data, test_size):
+    """Make a balanced subset of CAN data messages (balanced meaning same number of both classes)"""
+    size_per_class = test_size // 2
+    # split the data into their respective classes
+    injected = [d for d in data if d[-1] == 'T']
+    normal = [d for d in data if d[-1] == 'R']
+    if len(injected) < size_per_class:
+        raise Exception("Error: more injected messages needed than the dataset contains")
+    if len(normal) < size_per_class:
+        raise Exception("Error: more normal messages needed than the dataset contains")
+    injected_inds = inds_generator(len(injected) - 1, size_per_class)
+    normal_inds = inds_generator(len(normal) - 1, size_per_class)
+    return [injected[i] for i in injected_inds] + [normal[j] for j in normal_inds]
+
+
 def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob,
     keep_num, run_title):
     """
@@ -126,21 +154,26 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob,
         if test_size < 0:  # use all test data if test data size is negative
             test_data_subset = can_data
         else:
-            test_inds = []
-            while len(test_inds) < test_size:
-                ind = random.randint(0, len(can_data) - 1)
-                if ind not in test_inds:
-                    test_inds.append(ind)
-            test_data_subset = [can_data[i] for i in test_inds]
+            test_data_subset = make_balanced_subset(can_data, test_size)
 
         # run fitness test on all individuals because the data is random every round
-        fitnesses = []
+
+        start_time = datetime.now()
         for p in pop:
-            fitnesses.append(p.test(test_data_subset))
+            p.set_fitness_data(test_data_subset)
+        with Pool(processes=CPUS) as pool:
+            # calculate fitness values in parallel
+            # the individuals have to be returned from the parallel function explicitly because it
+            # makes a copy instead of just passing a reference
+            parallel_pop = pool.map(parallel_fitness, pop, pop_size // CPUS)
+        end_time = datetime.now()
+        pop = parallel_pop
+        fitnesses = [p.get_fitness() for p in pop]
 
         max_fitness = max(fitnesses)
         avg_fitness = sum(fitnesses) / len(pop)
-        print('gen {} fitnesses - max: {}, avg: {}'.format(i, max_fitness, avg_fitness))
+        print('gen {} fitnesses - max: {}, avg: {}, time: {}'.format(
+            i, max_fitness, avg_fitness, str(end_time - start_time)))
 
         # get the n best individuals
         # start with the first n and sort them
