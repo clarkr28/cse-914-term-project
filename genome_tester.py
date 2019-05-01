@@ -4,7 +4,7 @@
 import os
 import gzip
 import pickle
-from ea_individual_binary import IndividualBinary
+from ea_individual import Individual
 
 # constants
 LOG_DIR = './logs/'
@@ -18,10 +18,10 @@ def run_test(log_data, train_data, test_data):
     if 'individuals' not in log_data['logs'][max_gen]:
         raise Exception('Serialized population not found in last generation!')
 
-    # take the serialized individuals and load them into the IndividualBinary class
+    # take the serialized individuals and load them into the Individual class
     pop = []
     for serialized_data in log_data['logs'][max_gen]['individuals']:
-        individual = IndividualBinary()
+        individual = Individual()
         individual.load(serialized_data)
         pop.append(individual)
 

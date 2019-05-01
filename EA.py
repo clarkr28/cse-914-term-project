@@ -6,7 +6,7 @@
 
 import random
 import pickle # CAN data was saved in pkl format
-from ea_individual_binary import IndividualBinary
+from ea_individual import Individual
 from datetime import datetime
 import os
 import copy  # deepcopy used
@@ -138,7 +138,7 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob,
     # generate an initial population
     pop = []
     for i in range(pop_size):
-        pop.append(IndividualBinary())
+        pop.append(Individual())
 
     # load the testing data
     f = open(CAN_DATA_DIR + can_data_fname, 'rb')
@@ -217,7 +217,7 @@ def run(pop_size, test_size, num_gens, log_freq, can_data_fname, mut_prob,
 
         # create new individuals
         while len(next_gen) < pop_size:
-            next_gen.append(IndividualBinary())
+            next_gen.append(Individual())
 
         pop = next_gen
 
